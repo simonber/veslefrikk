@@ -2,5 +2,7 @@
 #define SETUP_H
 
 void initTimer();
+void initModem();
+void ping();
 
 #endif

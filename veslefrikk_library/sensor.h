@@ -2,17 +2,17 @@
 #define SENSOR_H
 
 //SENSOR PINOUT
-#define TEMP_1 0
-#define TEMP_2 1
-#define TEMP_3 2
-#define TEMP_4 3
-#define POWER 4
-#define BATTERY_1 5
-#define BATTERY_2 6
-#define BILGE_1 7
-#define BILGE_2 8
-#define LEVEL_1 9
-#define LEVEL_2 10
+#define TEMP_1 A0
+#define TEMP_2 A1
+#define TEMP_3 A2
+#define TEMP_4 A3
+#define POWER A4
+#define BATTERY_1 A5
+#define BATTERY_2 A6
+#define BILGE_1 A7
+#define BILGE_2 A8
+#define LEVEL_1 A9
+#define LEVEL_2 A10
 
 //Sampling period defined in seconds
 #define TEMP_INTERVAL 	1
@@ -21,8 +21,11 @@
 #define BILGE_INTERVAL 4
 #define LEVEL_INTERVAL 5
 
+//Define how often we will send data to server in seconds
+#define SEND_INTERVAL 30
+
 //Define the total sampling period here in seconds
-#define RESET_INTERVAL 10
+#define CLOCK_RESET 100
 
 #include "Arduino.h"
 
@@ -30,6 +33,6 @@ int readTemp(int sensor_pin);
 int readShorePower(int sensor_pin);
 int readBattery(int sensor_pin);
 int readBilge(int sensor_pin);
-int readWaterLevel(int sensor_pin);
+int readLevel(int sensor_pin);
 
 #endif
