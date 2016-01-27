@@ -2,9 +2,7 @@
 
 int readTemp(int sensor_pin)
 {
-	//Eksempelkode for prototype 26.01.16
-	int sensor_val = analogRead(sensor_pin);
-	return sensor_val;
+	return 0;
 }
 int readShorePower(int sensor_pin)
 {

@@ -27,5 +27,6 @@ Ting som mangler:
 -Sensorkode.
 -Grenseverdier for sms varsling.
 -System for data i pakken som sendes.
--+++…
+-++++…
 
+# veslefrikk

@@ -2,7 +2,7 @@
 #define SENSOR_H
 
 //SENSOR PINOUT
-#define TEMP_1 A0
+#define TEMP_1 12
 #define TEMP_2 A1
 #define TEMP_3 A2
 #define TEMP_4 A3
@@ -22,7 +22,7 @@
 #define LEVEL_INTERVAL 5
 
 //Define how often we will send data to server in seconds
-#define SEND_INTERVAL 30
+#define SEND_INTERVAL 10
 
 //Define the total sampling period here in seconds
 #define CLOCK_RESET 100
