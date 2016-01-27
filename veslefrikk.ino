@@ -2,6 +2,9 @@
 #include <sensor.h>
 #include <setup.h>
 #include <HardwareLink3.h>
+#include <OneWire.h>
+#include <DallasTemperature.h>
+
 
 volatile unsigned long seconds = 0;
 unsigned long elapsed_time = 0;
@@ -11,20 +14,24 @@ bool new_power = false;
 bool new_battery = false;
 bool new_bilge = false;
 bool new_level = false; 
-bool send_data = false; 
+bool send_data = false;
 
 byte* IMEI_nr = {};  
 
 byte data[2048] = {}; 
 long int data_counter = 15;    
 
-int temp_sample[255] = {};
+byte temp_sample[255] = {};
 int temp_counter = 0;
+byte temp_code = 2;
+
+OneWire oneWire(TEMP_1);
+DallasTemperature sensors(&oneWire);
 
 void setup()
 {
   Serial.begin(9600);
-  Serial3.begin(4800);
+  Serial2.begin(4800);
   initModem();
   IMEI_nr = get_IMEI_nr(); 
   for(int i = 0; i < 15; i++)
@@ -41,7 +48,10 @@ void loop()
   {
     //Eksempelkode for prototype 26.01.16
     /////////////////////////////////////
-    temp_sample[temp_counter] = readTemp(TEMP_1);
+    data[data_counter] = temp_code;
+    data_counter++;
+    sensors.requestTemperatures();
+    temp_sample[temp_counter] = sensors.getTempCByIndex(0)-1;
     Serial.print("Temperature Sample: ");
     Serial.println(temp_sample[temp_counter]);
 
@@ -53,11 +63,7 @@ void loop()
 
     temp_counter++;
     data_counter++;
-
-    //Legger til termineringsverdi etter hver sample?
-    data[data_counter] = 99;
-    data_counter++;
-
+    
     //Dirty fix for å hindre overflyt
     if(temp_counter==255)
     {
@@ -96,6 +102,9 @@ void loop()
   }
   if(send_data == true)
   {
+    data[data_counter] = 99;
+    data_counter++;
+    
     //Sender Data til server
     Serial.print("Sending Data: ");
     for(int i = 0; i < data_counter; i++)
