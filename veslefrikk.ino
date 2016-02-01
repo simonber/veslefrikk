@@ -4,7 +4,7 @@
 #include <HardwareLink3.h>
 #include <OneWire.h>
 #include <DallasTemperature.h>
-
+#include <rtc.h>
 
 volatile unsigned long seconds = 0;
 unsigned long elapsed_time = 0;
@@ -32,6 +32,7 @@ void setup()
 {
   Serial.begin(9600);
   Serial2.begin(4800);
+  initRTC();
   initModem();
   IMEI_nr = get_IMEI_nr(); 
   for(int i = 0; i < 15; i++)
@@ -43,7 +44,10 @@ void setup()
 }
 
 void loop()
-{
+{ 
+  //Prototyp for Unix timestamp, er ikke synket mot NTP, 02.02.16
+  Serial.println(get_Time());
+  
   if(new_temp == true)
   {
     //Eksempelkode for prototype 26.01.16

@@ -15,14 +15,14 @@
 #define LEVEL_2 A10
 
 //Sampling period defined in seconds
-#define TEMP_INTERVAL 	1
+#define TEMP_INTERVAL 	5
 #define POWER_INTERVAL	2
 #define BATTERY_INTERVAL 3
 #define BILGE_INTERVAL 4
 #define LEVEL_INTERVAL 5
 
 //Define how often we will send data to server in seconds
-#define SEND_INTERVAL 10
+#define SEND_INTERVAL 900
 
 //Define the total sampling period here in seconds
 #define CLOCK_RESET 100
