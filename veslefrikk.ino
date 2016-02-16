@@ -6,8 +6,8 @@
 #include <DallasTemperature.h>
 #include <rtc.h>
 
+
 volatile unsigned long seconds = 0;
-unsigned long elapsed_time = 0;
 
 bool new_temp = false;
 bool new_power = false;
@@ -16,65 +16,62 @@ bool new_bilge = false;
 bool new_level = false; 
 bool send_data = false;
 
-byte* IMEI_nr = {};  
-
 byte data[2048] = {}; 
-long int data_counter = 15;    
+
+long int data_counter = 19;    
+byte* IMEI_nr = {};  
 
 byte temp_sample[255] = {};
 int temp_counter = 0;
 byte temp_code = 2;
 
+uint32_t unix_time = 0;
+
 OneWire oneWire(TEMP_1);
 DallasTemperature sensors(&oneWire);
 
 void setup()
-{
-  Serial.begin(9600);
-  Serial2.begin(4800);
-  initRTC();
-  initModem();
-  IMEI_nr = get_IMEI_nr(); 
-  for(int i = 0; i < 15; i++)
-  {                        
-    data[i] = IMEI_nr[i];
+{ 
+  for(int j=19; j<256; j++)
+  {
+    data[j] = random(0,255);
   }
-  ping();
+  
+  Serial.begin(9600);
+  Serial2.begin(2400);
+  initModem();
+  
+  IMEI_nr = get_IMEI_nr(); 
+    
+    for(int i = 0; i < 15; i++)
+    {                        
+      data[i] = IMEI_nr[i];
+    }
+  
+  //ping();
   initTimer();
+  initRTC();
+  Serial.println("Booting Successful, starting to sample:");
 }
 
 void loop()
 { 
-  //Prototyp for Unix timestamp, er ikke synket mot NTP, 02.02.16
-  Serial.println(get_Time());
-  
   if(new_temp == true)
-  {
-    //Eksempelkode for prototype 26.01.16
-    /////////////////////////////////////
+  { 
     data[data_counter] = temp_code;
     data_counter++;
     sensors.requestTemperatures();
+    data[data_counter] = 0;
+    data_counter++;
     temp_sample[temp_counter] = sensors.getTempCByIndex(0)-1;
+    
     Serial.print("Temperature Sample: ");
     Serial.println(temp_sample[temp_counter]);
 
-    //Signalbehandling kommer her og leses inn i data buffer, eksempel:
-    //data[data_counter] = processTemp(temp_sample, temp_counter);
-
-    //Laster inn rådata istedenfor foreløpig:
     data[data_counter] = temp_sample[temp_counter];
 
     temp_counter++;
     data_counter++;
-    
-    //Dirty fix for å hindre overflyt
-    if(temp_counter==255)
-    {
-      temp_counter=0;
-      data_counter=0;
-    }
-    /////////////////////////////////////
     new_temp = false;
   }
   if(new_power == true)
@@ -106,7 +103,24 @@ void loop()
   }
   if(send_data == true)
   {
-    data[data_counter] = 99;
+    disableTimer();
+
+    data[data_counter] = 99;    
+
+    unix_time = get_Time();
+
+    Serial.print("Unix Time: ");
+    Serial.println(unix_time);
+    
+    data[15] = (unix_time >> 24) & 0xFF;
+    data[16] = (unix_time >> 16) & 0xFF;
+    data[17] = (unix_time >> 8) & 0xFF;
+    data[18] = unix_time & 0xFF;
+
+    unix_time = 0;
+    unix_time = (data[15] << 24 )| (data[16] << 16 )| (data[17] << 8 )| data[18];
+    Serial.print("Unix Time converted back is: ");
+    Serial.println(unix_time);
     data_counter++;
     
     //Sender Data til server
@@ -116,8 +130,8 @@ void loop()
       Serial.print((int)data[i]);     //Typecast virker ikke som forventet.
       Serial.print(" ");
     }
-
-    if(GPRS_send(data, data_counter))
+    
+    if(GPRS_send(data, 128))
     {                    
       Serial.println("Data was successfully sent!");
     }
@@ -125,35 +139,35 @@ void loop()
     {
       Serial.println("ERROR: Failed to send data");
     }
-    temp_counter=0;
-    data_counter=15;
     send_data=false;
+    data_counter = 19;
+    temp_counter=0;
+    seconds=0;
+    enableTimer();
   }
 }
 
-//Timer Interrupt som teller sekunder og setter flag når det skal samples eller sendes
 ISR(TIMER1_COMPA_vect)
 {
   seconds++;
-  elapsed_time = seconds;
   
-  if(elapsed_time%TEMP_INTERVAL == 0)
+  if(seconds%TEMP_INTERVAL == 0)
   {
     new_temp = true;
   }
-  if(elapsed_time%POWER_INTERVAL == 0)
+  if(seconds%POWER_INTERVAL == 0)
   {
     new_power = true;
   }
-  if(elapsed_time%BATTERY_INTERVAL == 0)
+  if(seconds%BATTERY_INTERVAL == 0)
   {
     new_battery = true;
   }
-  if(elapsed_time%BILGE_INTERVAL == 0)
+  if(seconds%BILGE_INTERVAL == 0)
   {
     new_bilge = true;
   }
-  if(elapsed_time%LEVEL_INTERVAL == 0)
+  if(seconds%LEVEL_INTERVAL == 0)
   {
     new_level = true;
   }
@@ -161,7 +175,7 @@ ISR(TIMER1_COMPA_vect)
   {
     seconds = 0;
   }
-  if(elapsed_time%SEND_INTERVAL == 0)
+  if(seconds%SEND_INTERVAL == 0)
   {
     send_data = true;
   }

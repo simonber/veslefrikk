@@ -2,7 +2,7 @@
 #define SENSOR_H
 
 //SENSOR PINOUT
-#define TEMP_1 12
+#define TEMP_1 42
 #define TEMP_2 A1
 #define TEMP_3 A2
 #define TEMP_4 A3
@@ -15,17 +15,17 @@
 #define LEVEL_2 A10
 
 //Sampling period defined in seconds
-#define TEMP_INTERVAL 	5
-#define POWER_INTERVAL	2
-#define BATTERY_INTERVAL 3
-#define BILGE_INTERVAL 4
-#define LEVEL_INTERVAL 5
+#define TEMP_INTERVAL 	2
+#define POWER_INTERVAL	100
+#define BATTERY_INTERVAL 100
+#define BILGE_INTERVAL 100
+#define LEVEL_INTERVAL 100
 
 //Define how often we will send data to server in seconds
-#define SEND_INTERVAL 900
+#define SEND_INTERVAL 11	
 
 //Define the total sampling period here in seconds
-#define CLOCK_RESET 100
+#define CLOCK_RESET 1000
 
 #include "Arduino.h"
 

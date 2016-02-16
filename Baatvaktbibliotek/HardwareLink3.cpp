@@ -66,14 +66,14 @@ bool cmdError(char* str){
 
 
 //Writes pin code to modem, and waits until modem is finished booting.
-void modemStart(long int pin){
+void modemStart(long int pin)
+{
 	char str[128] = ""; 	//String to gather answer from modem.
 	
 	pinMode(8, OUTPUT);		//Pin 8 is PWRKEY pin on the GSM-shield.
     pinMode(9, OUTPUT);		//Pin 9 is RESTART pin on the GSM-shield.
     digitalWrite(9, LOW);	//Setting both to low.
     digitalWrite(8, LOW);	
-	
 	long loopcounter = 0;
 	
 	while(!rdy4pin(str)){				//Waits until the modem asks for pin code.
@@ -98,6 +98,8 @@ void modemStart(long int pin){
 	str[0] = '\0';
 	
 	flushReg();
+	//Serial2.print("AT+CPIN="); 		//Writes pin code to modem.
+	//Serial2.print(pin);
 	submit(0);
 	
 	while(!bootFinished(str)){		//Waits until boot is finished.

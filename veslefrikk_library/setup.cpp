@@ -1,11 +1,9 @@
 #include "setup.h"
-#include <avr/io.h>
-#include <avr/interrupt.h>
-#include <HardwareLink3.h>
 
 long int pincode = 0000; 
 char* ip_addr;
 char ping_addr[32] = "www.google.com"; 
+
 
 void initTimer()
 {
@@ -17,7 +15,17 @@ void initTimer()
 	TCCR1B |= (1 << CS10);
 	TCCR1B |= (1 << CS12);
 	TIMSK1 |= (1 << OCIE1A);
-	sei();            			//Enable Global Interrupts
+	sei();            			//Enable Global Interrupts	
+}
+
+void enableTimer()
+{
+	TIMSK1 |= (1 << OCIE1A);
+}
+
+void disableTimer()
+{
+	TIMSK1 &= ~(1 << OCIE1A);
 }
 
 void initModem()

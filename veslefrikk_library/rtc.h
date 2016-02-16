@@ -1,7 +1,3 @@
-#if defined(ARDUINO_ARCH_SAMD)
-   #define Serial SerialUSB
-#endif
-
 #include <Wire.h>
 #include "RTClib.h"
 
