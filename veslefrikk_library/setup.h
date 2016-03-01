@@ -9,7 +9,6 @@
 void initTimer();
 void disableTimer();
 void enableTimer();
-void initModem();
-void ping();
+void initModem(byte* data);
 
 #endif

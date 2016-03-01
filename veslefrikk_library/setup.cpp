@@ -1,9 +1,7 @@
 #include "setup.h"
 
-long int pincode = 0000; 
-char* ip_addr;
 char ping_addr[32] = "www.google.com"; 
-
+long int pincode = 1234;
 
 void initTimer()
 {
@@ -28,31 +26,29 @@ void disableTimer()
 	TIMSK1 &= ~(1 << OCIE1A);
 }
 
-void initModem()
-{
-	Serial.println(F("Modem booting"));
-  	modemStart(pincode);                            
-  	Serial.println(F("Modem boot completed"));
-  	Serial.println(F("Entering modem setup"));
+void initModem(byte* data)
+{	
+	//Modem Boot
+	Serial.println(F("Trying to boot modem..."));  
+	modemStart(pincode);                       
+  	Serial.println(F("Modem boot completed."));
+  	Serial.println(F("Entering modem setup..."));
+  	
+  	//Modem Setup
   	if(GPRS_setup())
-  	{                               
+  	{                               //Configures the modem so that it is able to send data and SMS.
     	Serial.println(F("Modem setup completed"));   
   	}
   	else
   	{
-    Serial.println(F("Modem setup failed"));
-	}
-	
-	ip_addr = get_IP();                             
-  	Serial.print("IP address: ");
-  	Serial.println(ip_addr);
-}
-
-void ping()
-{
-	Serial.print("Signal strenght: ");
+    	Serial.println(F("Modem setup failed"));
+  	}
+  	
+  	//Signal Strength
+  	Serial.print("Signal strenght: ");
   	Serial.println(getSignalStrength());
   	
+  	//Ping
   	if(GPRS_ping(ping_addr))
   	{                       
     	Serial.print("Pinged "); 
@@ -64,7 +60,12 @@ void ping()
     	Serial.print("ERROR: Could not ping ");
     	Serial.println(ping_addr);
   	}
+  	 
+    Serial.println("");
+    Serial.println("Startup Complete.");
+    Serial.println("");
 }
+
   	
   	
 	

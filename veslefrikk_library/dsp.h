@@ -1,10 +1,10 @@
 #ifndef DSP_H
 #define DSP_H
 
-int processTemp(int* samples, int length);
-int processPower(int* samples, int length);
-int processBattery(int* samples, int length);
-int processBilge(int* samples, int length);
-int processLevel(int* samples, int length);
+double takeMeanValue(int sensorVec[], const int length);
+void swap(int *sensorVec, int p1, int p2);
+void sort(int *sensorVec, const int length);
+double takeMedian(int *sensorVec, const int length);
+void tempWarning(int indoorTemp, int outdoorTemp);
 
 #endif 

@@ -1,18 +1,21 @@
 #ifndef SENSOR_H
 #define SENSOR_H
 
+#define TEMP_1 2
+#define TEMP_2 3
+#define TEMP_3 4
+#define TEMP_4 5
+
 //SENSOR PINOUT
-#define TEMP_1 42
-#define TEMP_2 A1
-#define TEMP_3 A2
-#define TEMP_4 A3
+#define TEMP_BUS 42
+
 #define POWER A4
-#define BATTERY_1 A5
-#define BATTERY_2 A6
-#define BILGE_1 A7
-#define BILGE_2 A8
-#define LEVEL_1 A9
-#define LEVEL_2 A10
+#define BATTERY_1 5
+#define BATTERY_2 6
+#define BILGE_1 7
+#define BILGE_2 8
+#define LEVEL_1 9
+#define LEVEL_2 0
 
 //Sampling period defined in seconds
 #define TEMP_INTERVAL 	2
@@ -22,14 +25,17 @@
 #define LEVEL_INTERVAL 100
 
 //Define how often we will send data to server in seconds
-#define SEND_INTERVAL 11	
+#define SEND_INTERVAL 20000
 
 //Define the total sampling period here in seconds
 #define CLOCK_RESET 1000
 
-#include "Arduino.h"
+#include <OneWire.h>
+#include <DallasTemperature.h>
 
-int readTemp(int sensor_pin);
+
+void initSensors();
+int readTemperatures(byte* data, int data_counter);
 int readShorePower(int sensor_pin);
 int readBattery(int sensor_pin);
 int readBilge(int sensor_pin);
