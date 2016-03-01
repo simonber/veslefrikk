@@ -4,10 +4,6 @@
 #include <HardwareLink3.h>
 #include <OneWire.h>
 #include <DallasTemperature.h>
-#include <rtc.h>
-
-
-volatile unsigned long seconds = 0;
 
 bool new_temp = false;
 bool new_power = false;
@@ -16,42 +12,30 @@ bool new_bilge = false;
 bool new_level = false; 
 bool send_data = false;
 
-byte data[2048] = {}; 
-
-long int data_counter = 19;    
-byte* IMEI_nr = {};  
-
-byte temp_sample[255] = {};
+long int data_counter = 19;  
 int temp_counter = 0;
 byte temp_code = 2;
 
-uint32_t unix_time = 0;
+byte data[1024] = {}; 
+byte temp_samples[255] = {};
+byte IMEI[15] = {48,49,51,57,53,48,48,48,55,50,54,49,52,50,52};
 
-OneWire oneWire(TEMP_1);
+volatile unsigned long seconds = 0;
+
+OneWire oneWire(TEMP_BUS);
 DallasTemperature sensors(&oneWire);
 
 void setup()
 { 
-  for(int j=19; j<256; j++)
-  {
-    data[j] = random(0,255);
-  }
-  
-  Serial.begin(9600);
-  Serial2.begin(2400);
-  initModem();
-  
-  IMEI_nr = get_IMEI_nr(); 
-    
-    for(int i = 0; i < 15; i++)
-    {                        
-      data[i] = IMEI_nr[i];
-    }
-  
-  //ping();
+  Serial.begin(57600);
+  Serial3.begin(4800);
+  //initModem(data);
   initTimer();
-  initRTC();
-  Serial.println("Booting Successful, starting to sample:");
+  for(int i = 0; i < 15; i++)
+  {                   
+      data[i] = IMEI[i];
+  }
+  sensors.requestTemperatures();
 }
 
 void loop()
@@ -60,15 +44,13 @@ void loop()
   { 
     data[data_counter] = temp_code;
     data_counter++;
-    sensors.requestTemperatures();
-    data[data_counter] = 0;
-    data_counter++;
-    temp_sample[temp_counter] = sensors.getTempCByIndex(0)-1;
+    
+    temp_samples[temp_counter] = sensors.getTempCByIndex(0)-1;
     
     Serial.print("Temperature Sample: ");
-    Serial.println(temp_sample[temp_counter]);
+    Serial.println(temp_samples[temp_counter]);
 
-    data[data_counter] = temp_sample[temp_counter];
+    data[data_counter] = temp_samples[temp_counter];
 
     temp_counter++;
     data_counter++;
@@ -101,44 +83,14 @@ void loop()
     readLevel(LEVEL_2);
     new_level = false;
   }
+
+  //SEND FUNCTION
   if(send_data == true)
   {
     disableTimer();
-
-    data[data_counter] = 99;    
-
-    unix_time = get_Time();
-
-    Serial.print("Unix Time: ");
-    Serial.println(unix_time);
+    Serial.println("");
+    send_Package(data, data_counter);
     
-    data[15] = (unix_time >> 24) & 0xFF;
-    data[16] = (unix_time >> 16) & 0xFF;
-    data[17] = (unix_time >> 8) & 0xFF;
-    data[18] = unix_time & 0xFF;
-
-    unix_time = 0;
-    unix_time = (data[15] << 24 )| (data[16] << 16 )| (data[17] << 8 )| data[18];
-    Serial.print("Unix Time converted back is: ");
-    Serial.println(unix_time);
-    data_counter++;
-    
-    //Sender Data til server
-    Serial.print("Sending Data: ");
-    for(int i = 0; i < data_counter; i++)
-    {
-      Serial.print((int)data[i]);     //Typecast virker ikke som forventet.
-      Serial.print(" ");
-    }
-    
-    if(GPRS_send(data, 128))
-    {                    
-      Serial.println("Data was successfully sent!");
-    }
-    else
-    {
-      Serial.println("ERROR: Failed to send data");
-    }
     send_data=false;
     data_counter = 19;
     temp_counter=0;
