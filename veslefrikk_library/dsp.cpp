@@ -1,26 +1,75 @@
 #include <dsp.h>
 
-int processTemp(int* samples, int length)
-{
-	//Signalbehandling Kommer her
+
+int takeMeanValue(int sensorVec[], const int length) {
+	int tempSum = 0;
+
+	for (int i = 0; i < length; i++) {
+		tempSum += sensorVec[i];
+	}
+	return (int)round(tempSum / (double)length);
 }
 
-int processPower(int* samples, int length)
-{
-	//Signalbehandling Kommer her
+void swap(int *sensorVec, int p1, int p2) {
+	int pitstop = sensorVec[p1];
+	sensorVec[p1] = sensorVec[p2];
+	sensorVec[p2] = pitstop;
 }
 
-int processBattery(int* samples, int length)
-{
-	//Signalbehandling Kommer her
+
+void sort(int *sensorVec, const int length) {
+
+	for (int i = 0; i < (length-1); i++) {
+		for (int j = i + 1; j < length; j++) {
+			if (sensorVec[i] > sensorVec[j]) {
+				swap(sensorVec, i, j);
+			}
+		}
+	}
 }
 
-int processBilge(int* samples, int length)
-{
-	//Signalbehandling Kommer her
+float average(float numbers[], int size) {
+    double sum = 0;
+    for (int x = 0; x < size; x++)
+    {
+        sum += numbers[x];
+    }
+    return sum /(double)size;
 }
 
-int processLevel(int* samples, int length)
+const char *byte_to_binary(int x)
 {
-	//Signalbehandling Kommer her
+    static char b[9];
+    b[0] = '\0';
+
+    int z;
+    for (z = 128; z > 0; z >>= 1)
+    {
+        strcat(b, ((x & z) == z) ? "1" : "0");
+    }
+    return b;
 }
+
+/*
+int takeMedian(int *sensorVec, const int length) {
+	int res = 0;
+	sort(sensorVec, length);
+
+	if (length % 2 == 0) {
+		res = (int)round((sensorVec[(length/2)-1] + sensorVec[length/2]) / 2.0);
+	}
+	else {
+		res = sensorVec[(length - 1) / 2];
+	}
+	return res;
+}
+/*
+void tempWarning(int indoorTemp, int outdoorTemp) {
+
+  if (indoorTemp-outdoorTemp > 20 || indoorTemp > 25) {
+    //*burningShip = true;
+  }
+  else if (indoorTemp < 5) {
+    //*frozenShip = true;
+  }
+}*/
