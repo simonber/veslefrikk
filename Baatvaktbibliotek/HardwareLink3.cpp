@@ -1,7 +1,11 @@
 #include <HardwareLink3.h>
+
 uint32_t unix_time = 0;
 uint32_t checksum = 0;
 uint8_t checksum_index = 0;
+
+const char phone_1[9] = "94788247";
+const uint8_t IMEI[15] = {48,49,51,57,53,48,48,48,55,50,54,49,52,50,52};
 
 //Checks if input str ends with 'OK(submit)(newline)'. ASCII value 13 = submit. ASCII value 10 = newline.
 //Is used to keep the code from writing the next command until the modem has confirmed the previous command.
@@ -64,7 +68,8 @@ bool cmdError(char* str){
 
 
 //Writes pin code to modem, and waits until modem is finished booting.
-void modemStart(long int pin){
+void modemStart(long int pin)
+{
 	char str[128] = ""; 	//String to gather answer from modem.
 	
 	pinMode(8, OUTPUT);		//Pin 8 is PWRKEY pin on the GSM-shield.
@@ -74,7 +79,7 @@ void modemStart(long int pin){
 	
 	long loopcounter = 0;
 	
-	while(!rdy4pin(str)){				//Waits until the modem asks for pin code.
+	/*while(!rdy4pin(str)){				//Waits until the modem asks for pin code.
 		while(Serial3.available()){
 			cstringAppend(str, (char)Serial3.read());
 		}
@@ -106,7 +111,7 @@ void modemStart(long int pin){
 		}
 	}
 	
-	return;
+	return;*/
 }
 
 void modemStart_simple(long int pin){
@@ -120,8 +125,8 @@ void modemStart_simple(long int pin){
 	long loopcounter = 0;
 	
 	flushReg();
-	Serial3.print("AT+CPIN="); 		//Writes pin code to modem.
-	Serial3.print(pin);
+	//Serial3.print("AT+CPIN="); 		//Writes pin code to modem.
+	//Serial3.print(pin);
 	submit(0);
 	
 	while(!cmdOK(str)){				//Waits until the modem asks for pin code.
@@ -133,15 +138,15 @@ void modemStart_simple(long int pin){
 			digitalWrite(8, HIGH);		//We boot the modem.
 			delay(1000);
 			digitalWrite(8, LOW);
-			delay(5000);
+			delay(3000);
 			
 			loopcounter = 0;
 			
 			str[0] = '\0';
 			
 			flushReg();
-			Serial3.print("AT+CPIN="); 		//Writes pin code to modem.
-			Serial3.print(pin);
+			//Serial3.print("AT+CPIN="); 		//Writes pin code to modem.
+			//Serial3.print(pin);
 			submit(0);
 		}
 		
@@ -197,7 +202,7 @@ bool GPRS_setup(){
 	str[0] = '\0';
 	
 	flushReg();	
-	Serial3.print(F("AT+CSTT=\"telenor\",\"\",\"\"")); 	//Start task, set APN, username and password
+	Serial3.print(F("AT+CSTT=\"telia\",\"\",\"\"")); 	//Start task, set APN, username and password
 	
 	//With some telecom operators it may take some time to get a valid IP address.
 	//If an invalid IP address is assigned, add a delay here.
@@ -245,7 +250,7 @@ bool GPRS_setup(){
 	str[0] = '\0';
 	
 	flushReg();
-	Serial3.print(F("AT+SAPBR=3,1,\"APN\",\"telenor\""));	//Activate bearer profile
+	Serial3.print(F("AT+SAPBR=3,1,\"APN\",\"telia\""));	//Activate bearer profile
 	submit(0);
 	while(!cmdOK(str)){
 		if(Serial3.available()){
@@ -309,12 +314,23 @@ bool GPRS_setup(){
 	flushReg();
 	
 	return true;
-	
+}
+
+int CstringLength2(const char * str)
+{
+    // compute number of non-null characters in a C string
+    int i = 0;
+
+    while (str[i] != '\0')
+	i++;
+
+    return i;
 }
 
 
 //Sends SMS and returns true if successful and false if not.
-bool sendSMS(char* num,char* msg){
+bool sendSMS(const char* num, char* msg)
+{
         if(cstringLength(msg) > 160){			//Maximum size for an SMS is 160 letters.
                 return false;
         }
@@ -326,7 +342,7 @@ bool sendSMS(char* num,char* msg){
         submit(500);
 		flushReg();
         Serial3.print(F("AT+CMGS=\"2b3437"));			//Sending the SMS. Adds '+47' in HEX at the start of the phone number
-        for(int i = 0; i < cstringLength(num); i++){	//Adds phone number in HEX.
+        for(int i = 0; i < strlen(num); i++){	//Adds phone number in HEX.
                 Serial3.print((int)num[i],HEX);
         }
         Serial3.print(F("\""));
@@ -408,10 +424,9 @@ int getSignalStrength(){
 	}
 }
 
-
-
 void send_Package(byte* data, int len)
 {
+	
 	data[len] = 99; 
 	unix_time = get_unix_ts();
 	data[15] = (unix_time >> 24) & 0xFF;
@@ -441,6 +456,8 @@ void send_Package(byte* data, int len)
     }
     Serial.println("");
     Serial.print("Unix Time: ");
+    Serial.print(" ");
+    
     for(int i = 15; i < 19; i++)
     {
       Serial.print(data[i]);
@@ -461,16 +478,19 @@ void send_Package(byte* data, int len)
       Serial.print(" ");
     }
     Serial.println("");
-    Serial.println("");
-    /*
+    Serial.println("Total Size: ");
+    Serial.print(len);
+    Serial.println(" Bytes");
+    
     if(GPRS_send(data, len))
     {                    
       Serial.println("Data was successfully sent!");
+      Serial.println("");
     }
     else
     {
       Serial.println("ERROR: Failed to send data");
-    }*/
+    }
 }
 
 // Maximum data length: 1024 bytes.

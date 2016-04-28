@@ -2,7 +2,10 @@
   #include <Time.h>
   #include <cstring.h>
   #include <CRC32.h>
+  #define SMS_MAX 120
   
+  extern const char phone_1[9];
+  extern const uint8_t IMEI[15];
   
   //Confirmation from modem checks
   bool cmdOK(char* str);					//Checks for 'OK(submit)(newline)'.
@@ -17,7 +20,7 @@
   void modemStart_simple(long int pin); //TEST VERSION FOR WHEN GSM SHIELD DOES NOT ASK FOR PIN CODE
   bool GPRS_setup();					//Writes AT commands needed to configure GPRS.
   
-  bool sendSMS(char* num, char* msg);		//Sends msg as SMS to num.
+  bool sendSMS(const char* num, char* msg);		//Sends msg as SMS to num.
   int getSignalStrength();					//Returns the modems signal strength.
   bool GPRS_send(byte* data, int len);		//Sends data (array of bytes with length len) to the server.
   byte* get_IMEI_nr();						//Returns IMEI number of modem as array of bytes.
