@@ -1,11 +1,16 @@
 #include "setup.h"
 #include "waterlevel.h"
 
+<<<<<<< HEAD
 uint16_t bilge_1_raw;
 uint16_t bilge_2_raw; 
 
 uint8_t bilge_state_1;
 uint8_t bilge_state_2;
+=======
+char ping_addr[32] = "www.google.com"; 
+long int pincode = 1234;
+>>>>>>> b27cf5da3cb83a4036f743b9c641f5c54083e605
 
 void initTimer()
 {
@@ -43,6 +48,7 @@ void disableTimer()
 	TIMSK1 &= ~(1 << OCIE1A);
 }
 
+<<<<<<< HEAD
 void initModem()
 {		
 	Serial.print("Booting Modem..."); 
@@ -57,12 +63,27 @@ void initModem()
   	if(GPRS_setup())
   	{                              
     	Serial.println("	-	Modem setup completed");   
+=======
+void initModem(byte* data)
+{	
+	//Modem Boot
+	Serial.println(F("Trying to boot modem..."));  
+	modemStart(pincode);                       
+  	Serial.println(F("Modem boot completed."));
+  	Serial.println(F("Entering modem setup..."));
+  	
+  	//Modem Setup
+  	if(GPRS_setup())
+  	{                               //Configures the modem so that it is able to send data and SMS.
+    	Serial.println(F("Modem setup completed"));   
+>>>>>>> b27cf5da3cb83a4036f743b9c641f5c54083e605
   	}
   	else
   	{
     	Serial.println(F("Modem setup failed"));
   	}
   	
+<<<<<<< HEAD
   	Serial.print("Signal strenght: ");
   	Serial.println(getSignalStrength());  	 
 }
@@ -96,6 +117,28 @@ void initSensors()
     	bilge_state_2 = 0;
     }
   	//setBaseCapacitance();
+=======
+  	//Signal Strength
+  	Serial.print("Signal strenght: ");
+  	Serial.println(getSignalStrength());
+  	
+  	//Ping
+  	if(GPRS_ping(ping_addr))
+  	{                       
+    	Serial.print("Pinged "); 
+    	Serial.print(ping_addr); 
+    	Serial.println(" successfully");
+  	}
+  	else
+  	{
+    	Serial.print("ERROR: Could not ping ");
+    	Serial.println(ping_addr);
+  	}
+  	 
+    Serial.println("");
+    Serial.println("Startup Complete.");
+    Serial.println("");
+>>>>>>> b27cf5da3cb83a4036f743b9c641f5c54083e605
 }
 
   	

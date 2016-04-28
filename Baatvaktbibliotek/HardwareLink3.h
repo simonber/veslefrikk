@@ -1,7 +1,7 @@
-  #include <Arduino.h>
+	#include <Arduino.h>
   #include <Time.h>
   #include <cstring.h>
-  
+  #include <CRC32.h>
   
   
   //Confirmation from modem checks
@@ -12,15 +12,17 @@
   bool connFailed(char* str);				//Checks for 'FAIL' .
   bool cmdError(char* adr);					//Checks for 'ERROR'.
 
-
  //GPRS / GSM communication
   void modemStart(long int pin);		//Writes pin code to modem.
+  void modemStart_simple(long int pin); //TEST VERSION FOR WHEN GSM SHIELD DOES NOT ASK FOR PIN CODE
   bool GPRS_setup();					//Writes AT commands needed to configure GPRS.
   
   bool sendSMS(char* num, char* msg);		//Sends msg as SMS to num.
   int getSignalStrength();					//Returns the modems signal strength.
   bool GPRS_send(byte* data, int len);		//Sends data (array of bytes with length len) to the server.
   byte* get_IMEI_nr();						//Returns IMEI number of modem as array of bytes.
+  
+  void send_Package(byte* data, int len);
   
   bool GPRS_ping(char* str);				//Ping given address and return true if pinged successfully.
   char* get_IP();							//Returns the IP address assigned to the modem.

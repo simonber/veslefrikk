@@ -3,13 +3,14 @@
 #include <setup.h>
 #include <HardwareLink3.h>
 #include <waterlevel.h>
+#include <alarm.h>
 
 bool new_temp = false;
 bool new_power = false;
 bool new_battery = false;
 bool new_bilge = false;
 bool new_level = false; 
-bool send_data = false;
+bool send_data = false; 
 
 unsigned int data_counter = 19;  
 unsigned int temp_counter = 0;
@@ -22,36 +23,35 @@ unsigned int level_counter = 0;
 unsigned int level_mean_counter = 0;
 unsigned int power_counter = 0;
 uint16_t temp_sec = 0;
-volatile unsigned long ntp_counter = 0;
 volatile unsigned long seconds = 0;
 
 uint8_t bilge_buffer_1 = 0;
 uint8_t bilge_buffer_2 = 0;
 uint8_t data[1024] = {}; 
 
-uint16_t ts_bilge_1[64] = {};
-uint16_t ts_bilge_2[64] = {};
+uint16_t ts_bilge_1[128] = {};
+uint16_t ts_bilge_2[128] = {};
+uint16_t ts_power[64] = {};
 
-int16_t temp1_raw[61] = {};
-int16_t temp2_raw[61] = {};
-int16_t temp3_raw[61] = {};
-int16_t temp4_raw[61] = {};
+int16_t temp1_raw[30] = {};
+int16_t temp2_raw[30] = {};
+int16_t temp3_raw[30] = {};
+int16_t temp4_raw[30] = {};
+
 uint8_t temp1_mean[3] = {};
 uint8_t temp2_mean[3] = {};
 uint8_t temp3_mean[3] = {};
 uint8_t temp4_mean[3] = {};
 uint8_t shorepower_raw = 0;
 uint8_t shorepower[256] = {};
-uint16_t battery_1[128] = {};
-uint16_t battery_2[128] = {};
+uint16_t battery_1[3] = {};
+uint16_t battery_2[3] = {};
 uint8_t bilge_1[128] = {};
 uint8_t bilge_2[128] = {};
 float level_1[31] = {};
 float level_2[31] = {};
 float level_1_mean[3] = {};
 float level_2_mean[3] = {};
-
-const uint8_t IMEI[15] = {48,49,51,57,53,48,48,48,55,50,54,49,52,50,52};
 
 typedef union
 {
@@ -104,23 +104,18 @@ void loop()
     readLevel();
     new_level = false;
   }
+  
   if(send_data == true)
   {
     disableTimer();
     packData();
     send_Package(data, data_counter);
-    send_data=false;
-    ntp_counter = 0;
-
-    /*
-    if(ntp_counter == 2);
-    {
-      Serial.print("Syncing time to NTP server... ");
-      NTP_sync();
-      Serial.println("  -   Time synced successfully!");
-      ntp_counter = 0;
-    }*/
-    
+    send_data=false;  
+    alarmTimer();
+    alarmReset();
+    digitalWrite(LED0, HIGH);
+    delay(250);
+    digitalWrite(LED0, LOW);
     resetTimer();
     enableTimer();
   }
@@ -189,6 +184,9 @@ void sampleTemperatures()
     Serial.println(temp3_mean[temp_mean_counter]);
     Serial.print("Mean value of Temperature 4: ");
     Serial.println(temp4_mean[temp_mean_counter]);
+
+    checkTemp();
+
     temp_mean_counter++;
     temp_counter = 0;
   }
@@ -202,7 +200,13 @@ void readShorePower()
     }
     if(battery_1[battery_counter] < 14)
     {
-      shorepower_raw = 1;
+      shorepower_raw = 0;
+    }
+
+    if(shorepower_raw == 0)
+    {
+      ts_power[power_counter] = seconds;
+      power_counter++;
     }
 }
 
@@ -214,9 +218,11 @@ void readBattery()
     Serial.println(battery_1[battery_counter]);
     Serial.print("Battery 2: ");
     Serial.println(battery_2[battery_counter]);
+
+    checkBattery();
+    
     battery_counter++;
 }
-
 void readBilge()
 {
     bilge_1_raw = analogRead(BILGE_1);
@@ -232,6 +238,8 @@ void readBilge()
        bilge_buffer_1 = 0;  
     }
 
+    samplePump(pumpBuff_1, bilge_buffer_1);
+    
     if(bilge_state_1 != bilge_buffer_1)
     {
           
@@ -269,6 +277,8 @@ void readBilge()
        bilge_buffer_2 = 0;  
     }
 
+    //samplePump(pumpBuff_2, bilge_buffer_2);
+
     if(bilge_state_2 != bilge_buffer_2)
     {
           bilge_state_2 = bilge_buffer_2;
@@ -300,13 +310,16 @@ void readBilge()
 
 void readLevel()
 {
-     level_1[level_counter] = readLevel_1();
+     level_1[level_counter] = readLevel_1(); //* 0.2874; // - 0.5977;
      Serial.print("Water Level 1: ");
      Serial.println(level_1[level_counter]);
       
-     level_2[level_counter] = readLevel_2();
+     level_2[level_counter] = readLevel_2(); //* 0.6214; //- 0.5513;
      Serial.print("Water Level 2: ");
      Serial.println(level_2[level_counter]);
+
+     //analyzePump(pumpBuff_1, level_1);
+     //analyzePump(pumpBuff_2, level_2);
      
      level_counter++;
 
@@ -319,9 +332,12 @@ void readLevel()
         level_2_mean[level_mean_counter] = average(level_2, level_counter);
         Serial.print("Water Level 2 mean: ");
         Serial.println(level_2_mean[level_mean_counter]);
+
+        checkLevel();
+        
         level_mean_counter++;
         level_counter=0;
-     }
+     }  
 }
 
 void packData()
@@ -429,12 +445,138 @@ void packData()
     data_counter++;
   }
 
+  INTUNION_t shorepower;
+
   for(int i=0; i<power_counter; i++)
   {
+    shorepower.uint = ts_power[i];
     data[data_counter] = POWER_CODE;
     data_counter++;
-    data[data_counter] = shorepower[i];
+    data[data_counter] = shorepower.bytes[1];
     data_counter++;
+    data[data_counter] = shorepower.bytes[0];
+    data_counter++;
+  }
+}
+
+void checkTemp()
+{
+  if(temp1_mean[temp_mean_counter] > TEMP_1_MAX)
+  {
+    alert_TEMP_1_HIGH = true;
+    send_SMS(alarm_TEMP_1_HIGH, temp1_mean[temp_mean_counter]);
+  }
+  else
+  {
+    alert_TEMP_1_HIGH = false;
+  }
+  if(temp2_mean[temp_mean_counter] > TEMP_2_MAX)
+  {
+    alert_TEMP_2_HIGH = true;
+    send_SMS(alarm_TEMP_2_HIGH, temp2_mean[temp_mean_counter]);
+  }
+  else
+  {
+    alert_TEMP_2_HIGH = false;
+  }
+  
+  if(temp3_mean[temp_mean_counter] > TEMP_3_MAX)
+  {
+    alert_TEMP_3_HIGH = true;
+    send_SMS(alarm_TEMP_3_HIGH, temp3_mean[temp_mean_counter]);
+  }
+  else
+  {
+    alert_TEMP_3_HIGH = false;
+  }
+  
+  if(temp4_mean[temp_mean_counter] > TEMP_4_MAX)
+  {
+    alert_TEMP_4_HIGH = true;
+    send_SMS(alarm_TEMP_4_HIGH, temp4_mean[temp_mean_counter]);
+  }
+  else
+  {
+    alert_TEMP_4_HIGH = false;
+  }
+  if(temp1_mean[temp_mean_counter] < TEMP_1_MIN)
+  {
+    alert_TEMP_1_LOW = true;
+    send_SMS(alarm_TEMP_1_LOW, temp1_mean[temp_mean_counter]);
+  }
+  else
+  {
+    alert_TEMP_1_LOW = false;
+  }
+  if(temp2_mean[temp_mean_counter] < TEMP_2_MIN)
+  {
+    alert_TEMP_2_LOW = true;
+    send_SMS(alarm_TEMP_2_LOW, temp2_mean[temp_mean_counter]);
+  }
+  {
+    alert_TEMP_2_LOW = false;
+  }
+  if(temp3_mean[temp_mean_counter] < TEMP_3_MIN)
+  {
+    alert_TEMP_3_LOW = true;
+    send_SMS(alarm_TEMP_3_LOW, temp3_mean[temp_mean_counter]);
+  }
+  {
+    alert_TEMP_3_LOW = false;
+  }
+  if(temp4_mean[temp_mean_counter] < TEMP_4_MIN)
+  {
+    alert_TEMP_4_LOW = true;
+    send_SMS(alarm_TEMP_4_LOW, temp4_mean[temp_mean_counter]);
+  }
+  {
+    alert_TEMP_4_LOW = false;
+  }
+}
+
+void checkBattery()
+{
+  if(battery_1[battery_counter] < BATTERY_1_MIN)
+  {
+    alert_BATTERY_1 = true;
+    send_SMS(alarm_BATTERY_1, battery_1[battery_counter]);
+  }
+  else
+  {
+    alert_BATTERY_1 = false;
+  }
+
+  if(battery_2[battery_counter] < BATTERY_2_MIN)
+  {
+    alert_BATTERY_1 = false;
+    send_SMS(alarm_BATTERY_2, battery_2[battery_counter]);
+  }
+  else
+  {
+    alert_BATTERY_2 = false;
+  }
+}
+
+void checkLevel()
+{
+  if(level_1_mean[level_mean_counter] > LEVEL_1_MAX)
+  {
+    alert_LEVEL_1 = true;
+    send_SMS(alarm_LEVEL_1, level_1[level_counter]);
+  }
+  else
+  {
+    alert_LEVEL_1 = false;
+  }
+
+  if(level_2_mean[level_mean_counter] > LEVEL_2_MAX)
+  {
+    alert_LEVEL_2 = true;
+    send_SMS(alarm_LEVEL_2, level_2[level_counter]);
+  }
+  else
+  {
+    alert_LEVEL_2 = false;
   }
 }
 
